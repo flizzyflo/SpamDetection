@@ -2,10 +2,10 @@ package wordCounter;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.HashMap;
-import java.util.stream.Stream;
+import java.util.HashSet;
+import java.util.Set;
 
 public class WordCounter {
 
@@ -19,11 +19,63 @@ public class WordCounter {
         this.fileTypeToRead = fileTypeToRead;
     }
 
-    public void countSeveralStrings () {
-        this.countSeveralStrings(this.filePath);
+    public void countWords() {
+        this.countWords(this.filePath);
     }
 
-    private void countSeveralStrings(String filePath){
+    public HashMap<String, Integer> getWordCount() {
+        return new HashMap<String, Integer>(this.wordCounter);
+    };
+
+    public void setNewFilePath(String filePath) {
+        this.filePath = filePath;
+    }
+
+    public String getCurrentFilePath() {
+        return this.filePath;
+    }
+
+    public void clearCurrentWordCount() {
+        this.wordCounter.clear();
+    }
+
+    public HashMap<String, Double> getWordProbabilitiesForWordsIn(HashMap<String, Integer> wordCounter) {
+        HashMap<String, Double> wordProbabilities = new HashMap<>();
+
+        int totalWordCount = wordCounter.values().stream().mapToInt(Integer::intValue).sum();
+        for (String word: wordCounter.keySet()) {
+
+            int curVal = wordCounter.get(word);
+            if (curVal == 0) {
+                curVal = 1;
+            }
+            double prob = (double)curVal/totalWordCount;
+            wordProbabilities.put(word, prob);
+
+        }
+
+        return wordProbabilities;
+    }
+
+    public HashMap<String, Integer> mergeOtherWordCountKeysToCurrent(HashMap<String, Integer> wordCountToMerge) {
+        HashMap<String, Integer> mergedWordCounter = new HashMap<>(this.wordCounter);
+        Set<String> newWords = this.mergeWordCounterWith(wordCountToMerge);
+          for (String word: newWords) {
+              if (!mergedWordCounter.containsKey(word)) {
+                  mergedWordCounter.put(word, 0);
+              }
+          }
+          return mergedWordCounter;
+    };
+
+    private Set<String> mergeWordCounterWith(HashMap<String, Integer> wordCountToMerge) {
+        Set<String> newWords = new HashSet<>(wordCountToMerge.keySet());
+        Set<String> currentWords = new HashSet<>(this.wordCounter.keySet());
+        currentWords.addAll(newWords); // union of both word sets
+        return currentWords;
+    }
+
+    private void countWords(String filePath){
         File directory = new File(filePath);
         File[] files = directory.listFiles();
 
@@ -34,7 +86,7 @@ public class WordCounter {
         // get the files from there
         for (File currentFile: files) {
             if (currentFile.isDirectory()) {
-                this.countSeveralStrings(currentFile.toString());
+                this.countWords(currentFile.toString());
             }
             else if (currentFile.getName().endsWith(this.fileTypeToRead)) {
                this.readFileContentOf(currentFile);
@@ -79,10 +131,13 @@ public class WordCounter {
 
     private String removeInterpunctuation(String line) {
 
-        String[] interPuntucations = new String[] {"!", "?", ".", ";", ",", ".", "-","=","(",")","[","]","{","}","<",">","|" };
+        char[] interPuntucations = new char[] {
+                '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?', '@',
+                '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~'
+        };
 
-        for (String interPunctuation: interPuntucations) {
-            line = line.replace(interPunctuation, " ");
+        for (char interPunctuation: interPuntucations) {
+            line = line.replace(interPunctuation, ' ');
         };
         return line;
     };
@@ -104,14 +159,4 @@ public class WordCounter {
             this.wordCounter.put(word, 1);
         };
     }
-
-    public HashMap<String, Integer> getWordCounter() {
-        return this.wordCounter;
-    };
-
-    public static void main(String[] args) {
-        WordCounter wc = new WordCounter("/Users/florianluebke/Desktop/SpamDetection/src/learningData/", ".txt");
-        wc.countSeveralStrings();
-    }
-
 }
