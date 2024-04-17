@@ -131,10 +131,13 @@ public class WordCounter {
 
     private String removeInterpunctuation(String line) {
 
-        String[] interPuntucations = new String[] {"!", "?", ".", ";", ",", ".", "-","=","(",")","[","]","{","}","<",">","|" };
+        char[] interPuntucations = new char[] {
+                '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?', '@',
+                '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~'
+        };
 
-        for (String interPunctuation: interPuntucations) {
-            line = line.replace(interPunctuation, " ");
+        for (char interPunctuation: interPuntucations) {
+            line = line.replace(interPunctuation, ' ');
         };
         return line;
     };
