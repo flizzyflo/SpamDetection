@@ -22,6 +22,7 @@ public class WordCounter {
     public void countSeveralStrings () {
         this.countSeveralStrings(this.filePath);
     }
+
     private void countSeveralStrings(String filePath){
         File directory = new File(filePath);
         File[] files = directory.listFiles();
@@ -61,7 +62,6 @@ public class WordCounter {
         catch (Exception e) {
             System.out.println("Error: " + e);
         }
-        System.out.println(this.wordCounter);
     }
 
     private void processString(String fileLine) {
@@ -70,7 +70,9 @@ public class WordCounter {
         this.turnAllToLowerCase(words);
 
         for (String word: words ) {
-            this.addWordToWordCounter(word);
+            if (!(word.equals(" ") | word.isEmpty())) {
+                this.addWordToWordCounter(word);
+            };
         };
 
     }
@@ -83,7 +85,6 @@ public class WordCounter {
             line = line.replace(interPunctuation, " ");
         };
         return line;
-
     };
 
     private void turnAllToLowerCase(String[] words) {
@@ -109,7 +110,7 @@ public class WordCounter {
     };
 
     public static void main(String[] args) {
-        WordCounter wc = new WordCounter("/Users/florianluebke/Desktop/SpamDetection/src/src/", ".java");
+        WordCounter wc = new WordCounter("/Users/florianluebke/Desktop/SpamDetection/src/learningData/", ".txt");
         wc.countSeveralStrings();
     }
 
