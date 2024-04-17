@@ -19,30 +19,47 @@ public class WordCounter {
         this.fileTypeToRead = fileTypeToRead;
     }
 
-    public void countSeveralStrings () {
-        this.countSeveralStrings(this.filePath);
+    public void countWords() {
+        this.countWords(this.filePath);
     }
 
-    public HashMap<String, Integer> getWordCounter() {
+    public HashMap<String, Integer> getWordCount() {
         return new HashMap<String, Integer>(this.wordCounter);
     };
 
-    public void setNewPath(String filePath) {
+    public void setNewFilePath(String filePath) {
         this.filePath = filePath;
     }
 
-    public void clearCurrentCount() {
+    public String getCurrentFilePath() {
+        return this.filePath;
+    }
+
+    public void clearCurrentWordCount() {
         this.wordCounter.clear();
     }
 
-    public HashMap<String, Double> getWordProbabilities() {
+    public HashMap<String, Double> getWordProbabilitiesForWordsIn(HashMap<String, Integer> wordCounter) {
+        HashMap<String, Double> wordProbabilities = new HashMap<>();
 
-        return null;
+        int totalWordCount = wordCounter.values().stream().mapToInt(Integer::intValue).sum();
+        for (String word: wordCounter.keySet()) {
+
+            int curVal = wordCounter.get(word);
+            if (curVal == 0) {
+                curVal = 1;
+            }
+            double prob = (double)curVal/totalWordCount;
+            wordProbabilities.put(word, prob);
+
+        }
+
+        return wordProbabilities;
     }
 
     public HashMap<String, Integer> mergeOtherWordCountKeysToCurrent(HashMap<String, Integer> wordCountToMerge) {
         HashMap<String, Integer> mergedWordCounter = new HashMap<>(this.wordCounter);
-        Set<String> newWords = this.mergeWordBases(wordCountToMerge);
+        Set<String> newWords = this.mergeWordCounterWith(wordCountToMerge);
           for (String word: newWords) {
               if (!mergedWordCounter.containsKey(word)) {
                   mergedWordCounter.put(word, 0);
@@ -51,14 +68,14 @@ public class WordCounter {
           return mergedWordCounter;
     };
 
-    private Set<String> mergeWordBases(HashMap<String, Integer> wordCountToMerge) {
+    private Set<String> mergeWordCounterWith(HashMap<String, Integer> wordCountToMerge) {
         Set<String> newWords = new HashSet<>(wordCountToMerge.keySet());
         Set<String> currentWords = new HashSet<>(this.wordCounter.keySet());
         currentWords.addAll(newWords); // union of both word sets
         return currentWords;
     }
 
-    private void countSeveralStrings(String filePath){
+    private void countWords(String filePath){
         File directory = new File(filePath);
         File[] files = directory.listFiles();
 
@@ -69,7 +86,7 @@ public class WordCounter {
         // get the files from there
         for (File currentFile: files) {
             if (currentFile.isDirectory()) {
-                this.countSeveralStrings(currentFile.toString());
+                this.countWords(currentFile.toString());
             }
             else if (currentFile.getName().endsWith(this.fileTypeToRead)) {
                this.readFileContentOf(currentFile);
@@ -139,25 +156,4 @@ public class WordCounter {
             this.wordCounter.put(word, 1);
         };
     }
-
-    private void calculateWordProbablities () {
-
-    }
-
-
-    public static void main(String[] args) {
-        WordCounter wc = new WordCounter("/Users/florianluebke/Desktop/SpamDetection/src/learningData/spam", ".txt");
-        wc.countSeveralStrings();
-        HashMap<String, Integer> s = wc.getWordCounter();
-        System.out.println(s);
-        wc.setNewPath("/Users/florianluebke/Desktop/SpamDetection/src/learningData/notSpam");
-        wc.clearCurrentCount();
-        wc.countSeveralStrings();
-        HashMap<String, Integer> ns = wc.getWordCounter();
-        System.out.println(ns);
-        HashMap<String, Integer> merged = wc.mergeOtherWordCountKeysToCurrent(s);
-        System.out.println(merged);
-
-    }
-
 }
