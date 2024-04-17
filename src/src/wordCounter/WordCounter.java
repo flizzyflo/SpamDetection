@@ -152,6 +152,11 @@ public class WordCounter {
 
 
     private void addWordToWordCounter(String word) {
+
+        if (StopWords.isStopword(word)) {
+            return;
+        }
+
         if (this.wordCounter.containsKey(word)) {
             Integer currentValue = this.wordCounter.get(word);
             this.wordCounter.put(word, currentValue + 1);
