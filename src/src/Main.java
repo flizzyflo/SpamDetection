@@ -5,7 +5,7 @@ import wordCounter.WordCounter;
 public class Main {
     public static void main(String[] args) {
 
-        WordCounter wc = new WordCounter("/Users/florianluebke/Desktop/SpamDetection/src/learningData/spam/", ".txt");
+        WordCounter wc = new WordCounter("/Users/florianluebke/Desktop/SpamDetection/src/learningData/spam", ".txt");
         wc.countWords();
         System.out.println(wc.getWordCount());
         }
