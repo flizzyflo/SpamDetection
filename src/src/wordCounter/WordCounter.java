@@ -12,11 +12,29 @@ public class WordCounter {
     private String filePath;
     private HashMap<String, Integer> wordCounter;
     private String fileTypeToRead;
+    private int classCount;
+    private String className;
 
     public WordCounter(String filePath, String fileTypeToRead) {
         this.filePath = filePath;
         this.wordCounter = new HashMap<String, Integer>();
         this.fileTypeToRead = fileTypeToRead;
+    }
+
+    public WordCounter(String filePath, String fileTypeToRead, String className) {
+        this.filePath = filePath;
+        this.wordCounter = new HashMap<String, Integer>();
+        this.fileTypeToRead = fileTypeToRead;
+        this.classCount = 0;
+        this.className = className;
+    }
+
+    public int getClassCount() {
+        return this.classCount;
+    }
+
+    public String getClassName() {
+        return this.className;
     }
 
     public void countWords() {
@@ -46,26 +64,37 @@ public class WordCounter {
         for (String word: wordCounter.keySet()) {
 
             int curVal = wordCounter.get(word);
-            if (curVal == 0) {
-                curVal = 1;
-            }
+            curVal = curVal + 1;
             double prob = (double)curVal/totalWordCount;
             wordProbabilities.put(word, prob);
-
         }
-
         return wordProbabilities;
     }
 
-    public HashMap<String, Integer> mergeOtherWordCountKeysToCurrent(HashMap<String, Integer> wordCountToMerge) {
-        HashMap<String, Integer> mergedWordCounter = new HashMap<>(this.wordCounter);
+    public HashMap<String, Double> getWordProbabilities() {
+
+        return this.getWordProbabilitiesForWordsIn(this.getWordCount());
+    }
+
+    public void mergeOtherWordCountKeysToCurrent(HashMap<String, Integer> wordCountToMerge) {
+      //  HashMap<String, Integer> mergedWordCounter = new HashMap<>(this.wordCounter);
+
         Set<String> newWords = this.mergeWordCounterWith(wordCountToMerge);
-          for (String word: newWords) {
-              if (!mergedWordCounter.containsKey(word)) {
-                  mergedWordCounter.put(word, 0);
-              }
-          }
-          return mergedWordCounter;
+
+        for (String word: newWords) {
+            if (!this.wordCounter.containsKey(word)) {
+                this.wordCounter.put(word, 0);
+            }
+        }
+    };
+
+
+    public HashMap<String, Double> generateClassProbabilitiesWith(WordCounter otherClassWordCounter) {
+        HashMap<String, Double> res = new HashMap<>();
+        int totalCount = this.classCount + otherClassWordCounter.classCount;
+        res.put(this.className, (double) this.classCount/totalCount);
+        res.put(otherClassWordCounter.className, (double) otherClassWordCounter.classCount / totalCount);
+        return res;
     };
 
     private Set<String> mergeWordCounterWith(HashMap<String, Integer> wordCountToMerge) {
@@ -89,7 +118,11 @@ public class WordCounter {
                 this.countWords(currentFile.toString());
             }
             else if (currentFile.getName().endsWith(this.fileTypeToRead)) {
-               this.readFileContentOf(currentFile);
+                // class name is set
+                if (this.className != null) {
+                    this.classCount = this.classCount + 1;
+                };
+                this.readFileContentOf(currentFile);
             }
             else {
                 continue;
