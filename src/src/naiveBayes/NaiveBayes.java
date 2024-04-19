@@ -1,9 +1,6 @@
 package naiveBayes;
 
 import wordCounter.WordCounter;
-
-//TODO klassen flexibler ermöglichen
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -31,6 +28,14 @@ public class NaiveBayes {
     public void trainForClass(String className, WordCounter wordCounterForClass) {
         this.addSingleClass(className);
         this.wordProbabilites.put(className, wordCounterForClass.getWordProbabilities());
+    }
+
+    public void train(List<WordCounter> wordCounters) {
+        for (WordCounter wc: wordCounters) {
+            if (wc.isTestData()) {
+                this.trainForClass(wc.getClassName(), wc);
+            }
+        }
     }
 
     private void addSingleClass(String className) {
