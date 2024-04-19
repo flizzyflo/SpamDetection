@@ -4,11 +4,14 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class WordCounter {
 
+
     final private static HashMap<String, Double> classProbalities = new HashMap<>();
     final private static List<WordCounter> wordCounters= new ArrayList<>();
+    private static Set<String> uniqueWordsInAllDocuments = new HashSet<>();
     final private String filePath;
     final private HashMap<String, Integer> wordCounter;
     final private String fileTypeToRead;
@@ -21,12 +24,13 @@ public class WordCounter {
         this.wordCounter = new HashMap<>();
         this.fileTypeToRead = fileTypeToRead;
         this.countWords(this.filePath);
+        WordCounter.addToUniqueWordList(this.wordCounter);
         this.isTestData = false;
 
         // automatically track wordcounter instances for probability calculation and so on.
         if (trackClassWordCounters) {
             WordCounter.wordCounters.add(this);
-            WordCounter.mergeWordSets();
+          //  WordCounter.mergeWordSets();
             WordCounter.generateOverallClassProbabilities();
         }
     }
@@ -38,17 +42,18 @@ public class WordCounter {
         this.classCount = 0;
         this.className = classNameToCountFor;
         this.countWords(this.filePath);
+        WordCounter.addToUniqueWordList(this.wordCounter);
         this.isTestData = true;
 
         // automatically track wordcounter instances for probability calculation and so on.
         if (trackClassWordCounters) {
             WordCounter.wordCounters.add(this);
-            WordCounter.mergeWordSets();
             WordCounter.generateOverallClassProbabilities();
         }
     }
 
     public static List<WordCounter> getWordCounters() {
+
         return WordCounter.wordCounters;
     }
 
@@ -56,27 +61,6 @@ public class WordCounter {
         WordCounter.wordCounters.clear();
     }
 
-    private static void mergeWordSets() {
-        for (int i = 0; i < WordCounter.wordCounters.size(); i++) {
-            for (int j = 0; j < WordCounter.wordCounters.size(); j++) {
-                if (j == i) {
-                    continue;
-                }
-                WordCounter.wordCounters.get(i).mergeOtherWordCountKeysToCurrent(WordCounter.wordCounters.get(j).getWordCount());
-            }
-        }
-    }
-
-    public static void mergeWordSets(List<WordCounter> wordCounters) {
-        for (int i = 0; i < wordCounters.size(); i++) {
-            for (int j = 0; j < wordCounters.size(); j++) {
-                if (j == i) {
-                    continue;
-                }
-                wordCounters.get(i).mergeOtherWordCountKeysToCurrent(wordCounters.get(j).getWordCount());
-            }
-        }
-    }
 
     public static void generateOverallClassProbabilities() {
 
@@ -114,15 +98,19 @@ public class WordCounter {
 
     public HashMap<String, Double> getWordProbabilitiesForWordsIn(HashMap<String, Integer> wordCounter) {
         HashMap<String, Double> wordProbabilities = new HashMap<>();
-
-        int totalWordCount = wordCounter.values().stream().mapToInt(Integer::intValue).sum();
+        int totalWordCount =  wordCounter.values().stream().mapToInt(Integer::intValue).sum();
         for (String word: wordCounter.keySet()) {
 
             // assumption: even if word does not really occur, we assume it occurs at least once in average
             // test. thus, minimum word count is at least 1 (Laplace-Smoothing)
             int curVal = wordCounter.get(word);
-            curVal = curVal + 1;
-            double prob = (double)curVal/totalWordCount;
+            //curVal = curVal + 1;
+
+            if (curVal == 0) {
+                continue;
+            }
+            int d = totalWordCount + WordCounter.uniqueWordsInAllDocuments.size();
+            double prob = (double) (curVal + 1) / (d);
             wordProbabilities.put(word, prob);
         }
         return wordProbabilities;
@@ -130,17 +118,6 @@ public class WordCounter {
 
     public HashMap<String, Double> getWordProbabilities() {
         return this.getWordProbabilitiesForWordsIn(this.getWordCount());
-    }
-
-    public void mergeOtherWordCountKeysToCurrent(HashMap<String, Integer> wordCountToMerge) {
-
-        Set<String> wordsFromOtherText = this.mergeWordCounterWith(wordCountToMerge);
-
-        for (String word: wordsFromOtherText) {
-            if (!this.wordCounter.containsKey(word)) {
-                this.wordCounter.put(word, 1);
-            }
-        }
     }
 
     public HashMap<String, Double> generateClassProbabilitiesWith(WordCounter otherClassWordCounter) {
@@ -151,11 +128,8 @@ public class WordCounter {
         return res;
     }
 
-    private Set<String> mergeWordCounterWith(HashMap<String, Integer> wordCountToMerge) {
-        Set<String> newWords = new HashSet<>(wordCountToMerge.keySet());
-        Set<String> currentWords = new HashSet<>(this.wordCounter.keySet());
-        currentWords.addAll(newWords); // union of both word sets
-        return currentWords;
+    private static void addToUniqueWordList(HashMap<String, Integer> wordCounter) {
+        WordCounter.uniqueWordsInAllDocuments.addAll(wordCounter.keySet());
     }
 
     private void countWords(String filePath){
@@ -232,9 +206,14 @@ public class WordCounter {
 
     private void addWordToWordCounter(String word) {
 
-        if (StopWords.isStopword(word)) {
+        if (StopWords.isStopword(word)| word.matches("[0-9]*")) {
             return;
         }
+
+        if (word.length() <= 1) {
+            return;
+        }
+
         if (this.wordCounter.containsKey(word)) {
             Integer currentValue = this.wordCounter.get(word);
             this.wordCounter.put(word, currentValue + 1);
