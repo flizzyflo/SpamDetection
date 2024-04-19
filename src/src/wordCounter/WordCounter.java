@@ -3,33 +3,98 @@ package wordCounter;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.*;
 
 public class WordCounter {
 
+    final private static HashMap<String, Double> classProbalities = new HashMap<>();
+    final private static List<WordCounter> wordCounters= new ArrayList<>();
     final private String filePath;
     final private HashMap<String, Integer> wordCounter;
     final private String fileTypeToRead;
     private int classCount;
     private String className;
 
-    public WordCounter(String filePath, String fileTypeToRead) {
+    public WordCounter(String filePath, String fileTypeToRead, Boolean trackClassWordCounters) {
         this.filePath = filePath;
         this.wordCounter = new HashMap<>();
         this.fileTypeToRead = fileTypeToRead;
         this.countWords(this.filePath);
+
+        if (trackClassWordCounters) {
+            WordCounter.wordCounters.add(this);
+            WordCounter.mergeWordSets();
+            WordCounter.generateOverallClassProbabilities();
+        }
     }
 
-    public WordCounter(String filePath, String fileTypeToRead, String classNameToCountFor) {
+    public WordCounter(String filePath, String fileTypeToRead, String classNameToCountFor, Boolean trackClassWordCounters) {
         this.filePath = filePath;
         this.wordCounter = new HashMap<>();
         this.fileTypeToRead = fileTypeToRead;
         this.classCount = 0;
         this.className = classNameToCountFor;
         this.countWords(this.filePath);
+
+        if (trackClassWordCounters) {
+            WordCounter.wordCounters.add(this);
+            WordCounter.mergeWordSets();
+            WordCounter.generateOverallClassProbabilities();
+        }
     }
+
+    public static List<WordCounter> getWordCounters() {
+        return WordCounter.wordCounters;
+    }
+
+    public static void clearWordCounterList() {
+        WordCounter.wordCounters.clear();
+    }
+
+    private static void mergeWordSets() {
+        for (int i = 0; i < WordCounter.wordCounters.size(); i++) {
+            for (int j = 0; j < WordCounter.wordCounters.size(); j++) {
+                if (j == i) {
+                    continue;
+                }
+                WordCounter.wordCounters.get(i).mergeOtherWordCountKeysToCurrent(WordCounter.wordCounters.get(j).getWordCount());
+            }
+        }
+    }
+
+    public static void mergeWordSets(List<WordCounter> wordCounters) {
+        for (int i = 0; i < wordCounters.size(); i++) {
+            for (int j = 0; j < wordCounters.size(); j++) {
+                if (j == i) {
+                    continue;
+                }
+                wordCounters.get(i).mergeOtherWordCountKeysToCurrent(wordCounters.get(j).getWordCount());
+            }
+        }
+    }
+
+    public static void generateOverallClassProbabilities() {
+
+        int totalCount = 0;
+        for (WordCounter wc: WordCounter.wordCounters) {
+            if (wc.className == null) {
+                continue;
+            }
+            totalCount = totalCount + wc.classCount;
+        }
+
+        for (WordCounter wc: WordCounter.wordCounters) {
+            if (wc.className == null) {
+                continue;
+            }
+            WordCounter.classProbalities.put(wc.className, (double) wc.classCount / totalCount);
+        }
+    }
+
+    public static HashMap<String, Double> getClassProbabilities() {
+        return WordCounter.classProbalities;
+    }
+
 
     public HashMap<String, Integer> getWordCount() {
         return new HashMap<>(this.wordCounter);
