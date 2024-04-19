@@ -7,11 +7,11 @@ import java.util.List;
 public class Main {
     public static void main(String[] args) {
 
-        final String spam = "Spam";
-        final String notSpam = "NotSpam";
+        final String notSpam = "notSpam";
+        final String spam = "spam";
 
-        WordCounter spamCounter = new WordCounter("/Users/florianluebke/Desktop/SpamDetection/SpamDetection/src/learningData/spam", ".txt", spam, true);
         WordCounter nonSpamCounter = new WordCounter("/Users/florianluebke/Desktop/SpamDetection/SpamDetection/src/learningData/notSpam", ".txt", notSpam, true);
+        WordCounter spamCounter = new WordCounter("/Users/florianluebke/Desktop/SpamDetection/SpamDetection/src/learningData/spam", ".txt", spam, true);
         WordCounter testCounter = new WordCounter("/Users/florianluebke/Desktop/SpamDetection/SpamDetection/src/learningData/testfile", ".txt", true);
 
         List<WordCounter> w = WordCounter.getWordCounters();
