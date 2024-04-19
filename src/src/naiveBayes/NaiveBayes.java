@@ -10,51 +10,84 @@ import java.util.List;
 
 public class NaiveBayes {
 
-    private final List<String> differentClassNames;
-    private final HashMap<String, HashMap<String, Double>> wordProbabilitiesPerEverySingleClass;
-    private final HashMap<String, Double> classProbability;
-    private final HashMap<String, Double> probabilityEstimationPerClass;
+    private final List<String> classificationNames;
+    private final HashMap<String, HashMap<String, Double>> wordProbabilites;
+    private HashMap<String, Double> classificationProbabilites;
+    private final HashMap<String, Double> estimatedClassificationResults;
+
+    public NaiveBayes() {
+        this.classificationNames = new ArrayList<String>();
+        this.wordProbabilites = new HashMap<>();
+        this.estimatedClassificationResults = new HashMap<String, Double>();
+    }
 
     public NaiveBayes(HashMap<String, Double> singleClassProbabilites) {
-        this.differentClassNames = new ArrayList<String>();
-        this.wordProbabilitiesPerEverySingleClass = new HashMap<>();
-        this.classProbability = singleClassProbabilites;
-        this.probabilityEstimationPerClass = new HashMap<String, Double>();
+        this.classificationNames = new ArrayList<String>();
+        this.classificationProbabilites = singleClassProbabilites;
+        this.wordProbabilites = new HashMap<>();
+        this.estimatedClassificationResults = new HashMap<String, Double>();
     }
 
-    public HashMap<String, Double> getProbabilityEstimationPerClass() {
-        return this.probabilityEstimationPerClass;
+    public void trainForClass(String className, WordCounter wordCounterForClass) {
+        this.addSingleClass(className);
+        this.wordProbabilites.put(className, wordCounterForClass.getWordProbabilities());
     }
 
-    public void addSingleClass(String className) {
-        this.differentClassNames.add(className);
+    private void addSingleClass(String className) {
+        this.classificationNames.add(className);
     }
 
-    public void calculateProbabilityPerClass(String className, WordCounter wordCounterForClass) {
-        this.wordProbabilitiesPerEverySingleClass.put(className, wordCounterForClass.getWordProbabilities());
+    public String predict(WordCounter textToBeClassified) {
+        // if automatic wordCounter counting is enabled, classification probs are set automatically
+        if (this.classificationProbabilites == null) {
+            this.classificationProbabilites = WordCounter.getClassProbabilities();
+        }
 
-    };
+        this._predict(textToBeClassified);
+        return this.getPredictedClassification();
+    }
 
-    public String predict(WordCounter wordCounterForTextToBePredicted) {
-        HashMap<String, Integer> wordCount = wordCounterForTextToBePredicted.getWordCount();
+    private void _predict(WordCounter textToBeClassified) {
+        double classificationProbability;
+        HashMap<String, Integer> wordCount = textToBeClassified.getWordCount();
 
-        double spamProbability = this.calculateProbabiltyForAllWords(this.wordProbabilitiesPerEverySingleClass, "spam", wordCount);
-        double nonSpamProbabilty = this.calculateProbabiltyForAllWords(this.wordProbabilitiesPerEverySingleClass, "kein_spam", wordCount);
+        for (String classificationName: this.classificationNames) {
+            classificationProbability = this.calculateClassProbabilty(this.wordProbabilites, classificationName, wordCount);
+            this.estimatedClassificationResults.put(classificationName, classificationProbability);
+        }
+    }
 
-        return spamProbability > nonSpamProbabilty ? "Spam" : "kein Spam";
+    private String getPredictedClassification() {
+        String classification = null;
+        double highestProbability = -1;
+        double estimatedProbability;
 
-    };
+        for (String classificationName: this.classificationNames) {
+            estimatedProbability = this.estimatedClassificationResults.get(classificationName);
 
-    private double calculateProbabiltyForAllWords(HashMap<String, HashMap<String, Double>> wordProbabilityPerClass, String className, HashMap<String, Integer> wordCount) {
+            if (estimatedProbability > highestProbability) {
+                highestProbability = estimatedProbability;
+                classification = classificationName;
+            }
+        }
+        return classification;
+    }
 
-        double probability = this.classProbability.get(className);
+    private double calculateClassProbabilty(HashMap<String, HashMap<String, Double>> wordProbabilityPerClass, String className, HashMap<String, Integer> textToBeClassified) {
 
+        int wordCount;
+        double wordProbability;
+
+        // share of class on total training data amount
+        double probability = this.classificationProbabilites.get(className);
+        // pretrained probabilites per class per word
         HashMap<String, Double> wordProbabilities = wordProbabilityPerClass.get(className);
 
-        for (String word: wordCount.keySet()) {
-            int count = wordCount.get(word);
-            double wordProbability = wordProbabilities.get(word); // Probability of the word in the class
-            probability *= Math.pow(wordProbability, count); // Multiply the probability for each word
+        // iterate over all words of text to be classified, grab count and multiply with trained probability and overall class probabilty
+        for (String word: textToBeClassified.keySet()) {
+            wordCount = textToBeClassified.get(word); // total occurence of word within text to be classified
+            wordProbability = wordProbabilities.get(word); // Probability of the word in the class
+            probability *= Math.pow(wordProbability, wordCount); // Multiply the probability for each word to get total prob
         }
 
         return probability;
