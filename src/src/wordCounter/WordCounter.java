@@ -14,13 +14,16 @@ public class WordCounter {
     final private String fileTypeToRead;
     private int classCount;
     private String className;
+    private boolean isTestData;
 
     public WordCounter(String filePath, String fileTypeToRead, Boolean trackClassWordCounters) {
         this.filePath = filePath;
         this.wordCounter = new HashMap<>();
         this.fileTypeToRead = fileTypeToRead;
         this.countWords(this.filePath);
+        this.isTestData = false;
 
+        // automatically track wordcounter instances for probability calculation and so on.
         if (trackClassWordCounters) {
             WordCounter.wordCounters.add(this);
             WordCounter.mergeWordSets();
@@ -35,7 +38,9 @@ public class WordCounter {
         this.classCount = 0;
         this.className = classNameToCountFor;
         this.countWords(this.filePath);
+        this.isTestData = true;
 
+        // automatically track wordcounter instances for probability calculation and so on.
         if (trackClassWordCounters) {
             WordCounter.wordCounters.add(this);
             WordCounter.mergeWordSets();
@@ -47,7 +52,7 @@ public class WordCounter {
         return WordCounter.wordCounters;
     }
 
-    public static void clearWordCounterList() {
+    public static void clearWordCounters() {
         WordCounter.wordCounters.clear();
     }
 
@@ -95,6 +100,13 @@ public class WordCounter {
         return WordCounter.classProbalities;
     }
 
+    public String getClassName() {
+        return this.className;
+    }
+
+    public boolean isTestData() {
+        return this.isTestData;
+    }
 
     public HashMap<String, Integer> getWordCount() {
         return new HashMap<>(this.wordCounter);
