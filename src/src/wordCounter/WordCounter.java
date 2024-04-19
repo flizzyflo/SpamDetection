@@ -1,8 +1,5 @@
 package wordCounter;
 
-//TODO: Punctuation klasse erstellen, worte die nicht enthalten sind auf null setzen (diese plus 1 geschichte rausnehmen)
-
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -12,52 +9,30 @@ import java.util.Set;
 
 public class WordCounter {
 
-    private String filePath;
-    private HashMap<String, Integer> wordCounter;
-    private String fileTypeToRead;
+    final private String filePath;
+    final private HashMap<String, Integer> wordCounter;
+    final private String fileTypeToRead;
     private int classCount;
     private String className;
 
     public WordCounter(String filePath, String fileTypeToRead) {
         this.filePath = filePath;
-        this.wordCounter = new HashMap<String, Integer>();
+        this.wordCounter = new HashMap<>();
         this.fileTypeToRead = fileTypeToRead;
+        this.countWords(this.filePath);
     }
 
-    public WordCounter(String filePath, String fileTypeToRead, String className) {
+    public WordCounter(String filePath, String fileTypeToRead, String classNameToCountFor) {
         this.filePath = filePath;
-        this.wordCounter = new HashMap<String, Integer>();
+        this.wordCounter = new HashMap<>();
         this.fileTypeToRead = fileTypeToRead;
         this.classCount = 0;
-        this.className = className;
-    }
-
-    public int getClassCount() {
-        return this.classCount;
-    }
-
-    public String getClassName() {
-        return this.className;
-    }
-
-    public void countWords() {
+        this.className = classNameToCountFor;
         this.countWords(this.filePath);
     }
 
     public HashMap<String, Integer> getWordCount() {
-        return new HashMap<String, Integer>(this.wordCounter);
-    };
-
-    public void setNewFilePath(String filePath) {
-        this.filePath = filePath;
-    }
-
-    public String getCurrentFilePath() {
-        return this.filePath;
-    }
-
-    public void clearCurrentWordCount() {
-        this.wordCounter.clear();
+        return new HashMap<>(this.wordCounter);
     }
 
     public HashMap<String, Double> getWordProbabilitiesForWordsIn(HashMap<String, Integer> wordCounter) {
@@ -66,6 +41,8 @@ public class WordCounter {
         int totalWordCount = wordCounter.values().stream().mapToInt(Integer::intValue).sum();
         for (String word: wordCounter.keySet()) {
 
+            // assumption: even if word does not really occur, we assume it occurs at least once in average
+            // test. thus, minimum word count is at least 1 (Laplace-Smoothing)
             int curVal = wordCounter.get(word);
             curVal = curVal + 1;
             double prob = (double)curVal/totalWordCount;
@@ -75,22 +52,19 @@ public class WordCounter {
     }
 
     public HashMap<String, Double> getWordProbabilities() {
-
         return this.getWordProbabilitiesForWordsIn(this.getWordCount());
     }
 
     public void mergeOtherWordCountKeysToCurrent(HashMap<String, Integer> wordCountToMerge) {
-      //  HashMap<String, Integer> mergedWordCounter = new HashMap<>(this.wordCounter);
 
-        Set<String> newWords = this.mergeWordCounterWith(wordCountToMerge);
+        Set<String> wordsFromOtherText = this.mergeWordCounterWith(wordCountToMerge);
 
-        for (String word: newWords) {
+        for (String word: wordsFromOtherText) {
             if (!this.wordCounter.containsKey(word)) {
-                this.wordCounter.put(word, 0);
+                this.wordCounter.put(word, 1);
             }
         }
-    };
-
+    }
 
     public HashMap<String, Double> generateClassProbabilitiesWith(WordCounter otherClassWordCounter) {
         HashMap<String, Double> res = new HashMap<>();
@@ -98,7 +72,7 @@ public class WordCounter {
         res.put(this.className, (double) this.classCount/totalCount);
         res.put(otherClassWordCounter.className, (double) otherClassWordCounter.classCount / totalCount);
         return res;
-    };
+    }
 
     private Set<String> mergeWordCounterWith(HashMap<String, Integer> wordCountToMerge) {
         Set<String> newWords = new HashSet<>(wordCountToMerge.keySet());
@@ -121,22 +95,20 @@ public class WordCounter {
                 this.countWords(currentFile.toString());
             }
             else if (currentFile.getName().endsWith(this.fileTypeToRead)) {
-                // class name is set
+                // class name is given as argument in constructor, thus count class
+                // relevant for training and calculation overall class probability
                 if (this.className != null) {
                     this.classCount = this.classCount + 1;
-                };
+                }
                 this.readFileContentOf(currentFile);
-            }
-            else {
-                continue;
             }
         }
     }
 
     private void readFileContentOf(File file) {
         String line;
-        try {
 
+        try {
             FileReader fileReader = new FileReader(file);
             BufferedReader fileContentReader = new BufferedReader(fileReader);
             line = fileContentReader.readLine();
@@ -144,8 +116,7 @@ public class WordCounter {
             while (line != null) {
                 this.processString(line);
                 line = fileContentReader.readLine();
-            };
-
+            }
         }
         catch (Exception e) {
             System.out.println("Error: " + e);
@@ -153,52 +124,47 @@ public class WordCounter {
     }
 
     private void processString(String fileLine) {
+        // filtering and cleaning process of words
         fileLine = this.removeInterpunctuation(fileLine);
         String[] words = fileLine.split(" ");
-        this.turnAllToLowerCase(words);
 
-        for (String word: words ) {
+        this.turnLowerCase(words);
+
+        for (String word: words) {
+            // if valid word, add to counter
             if (!(word.equals(" ") | word.isEmpty())) {
                 this.addWordToWordCounter(word);
-            };
-        };
-
+            }
+        }
     }
 
     private String removeInterpunctuation(String line) {
-
-        char[] interPuntucations = new char[] {
-                '!', '"', '#', '$', '%', '&', '\'', '(', ')', '*', '+', ',', '-', '.', '/', ':', ';', '<', '=', '>', '?', '@',
-                '[', '\\', ']', '^', '_', '`', '{', '|', '}', '~'
-        };
-
-        for (char interPunctuation: interPuntucations) {
-            line = line.replace(interPunctuation, ' ');
-        };
+        for (String interPunctuation: Punctuation.PUNCTUATION) {
+            line = line.replace(interPunctuation, " ");
+        }
         return line;
-    };
+    }
 
-    private void turnAllToLowerCase(String[] words) {
+    private void turnLowerCase(String[] words) {
         String currentWord;
         for (int i = 0; i < words.length; i++){
             currentWord = words[i].toLowerCase();
             words[i] = currentWord;
         }
-    };
-
+    }
 
     private void addWordToWordCounter(String word) {
 
         if (StopWords.isStopword(word)) {
             return;
         }
-
         if (this.wordCounter.containsKey(word)) {
             Integer currentValue = this.wordCounter.get(word);
             this.wordCounter.put(word, currentValue + 1);
-        } else {
+        }
+        else
+        {
             this.wordCounter.put(word, 1);
-        };
+        }
     }
-
 }
