@@ -1,5 +1,8 @@
 package wordCounter;
 
+//TODO: Punctuation klasse erstellen, worte die nicht enthalten sind auf null setzen (diese plus 1 geschichte rausnehmen)
+
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -197,4 +200,5 @@ public class WordCounter {
             this.wordCounter.put(word, 1);
         };
     }
+
 }
