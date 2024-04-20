@@ -20,21 +20,21 @@ public class WordCounter {
     private boolean isTrainingData;
 
     public WordCounter(String filePath, String fileTypeToRead, Boolean trackClassWordCounters) {
+        if (trackClassWordCounters) {
+            WordCounter.wordCounters.add(this);
+        }
         this.isTrainingData = false;
         this.filePath = filePath;
         this.wordCounter = new HashMap<>();
         this.fileTypeToRead = fileTypeToRead;
-
         this.countWords();
-        WordCounter.addToUniqueWordList(this.wordCounter);
-        this.makeWordMatricesContainSameWords();
-
-        if (trackClassWordCounters) {
-            WordCounter.wordCounters.add(this);
-        }
     }
 
     public WordCounter(String filePath, String fileTypeToRead, String classNameToCountFor, Boolean trackClassWordCounters) {
+        if (trackClassWordCounters) {
+            WordCounter.wordCounters.add(this);
+        }
+
         this.isTrainingData = true;
         this.filePath = filePath;
         this.wordCounter = new HashMap<>();
@@ -44,9 +44,7 @@ public class WordCounter {
         this.countWords();
         WordCounter.addToUniqueWordList(this.wordCounter);
         this.makeWordMatricesContainSameWords();
-        if (trackClassWordCounters) {
-            WordCounter.wordCounters.add(this);
-        }
+
     }
 
     public static List<WordCounter> getWordCounters() {
@@ -79,8 +77,7 @@ public class WordCounter {
         }
     }
 
-
-    public static int getUniqueWords() {
+    public static int getUniqueWordCount() {
         return uniqueWordsInAllDocuments.size();
     }
 
