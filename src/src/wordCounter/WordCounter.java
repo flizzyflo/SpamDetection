@@ -11,45 +11,41 @@ public class WordCounter {
     final private static List<WordCounter> wordCounters= new ArrayList<>();
     final private static HashMap<String, Double> classProbalities = new HashMap<>();
     final private static HashMap<String, HashMap<String, Integer>> wordCountPerClass = new HashMap<>();
-
+    final private static HashMap<String, Integer> classificationAppearences = new HashMap<>();
     final private String filePath;
     final private HashMap<String, Integer> wordCounter;
     final private String fileTypeToRead;
     private int classCount;
     private String className;
-    private boolean isTestData;
-    private int k;
+    private boolean isTrainingData;
 
-    public WordCounter(String filePath, String fileTypeToRead, int k, Boolean trackClassWordCounters) {
+    public WordCounter(String filePath, String fileTypeToRead, Boolean trackClassWordCounters) {
+        this.isTrainingData = false;
         this.filePath = filePath;
         this.wordCounter = new HashMap<>();
         this.fileTypeToRead = fileTypeToRead;
-        this.countWords();
-        this.k = k;
-        WordCounter.addToUniqueWordList(this.wordCounter);
-        this.isTestData = false;
 
-        // automatically track wordcounter instances for probability calculation and so on.
+        this.countWords();
+        WordCounter.addToUniqueWordList(this.wordCounter);
+        this.makeWordMatricesContainSameWords();
+
         if (trackClassWordCounters) {
             WordCounter.wordCounters.add(this);
-            WordCounter.generateClassificationProbabilites();
         }
     }
 
-    public WordCounter(String filePath, String fileTypeToRead, String classNameToCountFor, int k, Boolean trackClassWordCounters) {
+    public WordCounter(String filePath, String fileTypeToRead, String classNameToCountFor, Boolean trackClassWordCounters) {
+        this.isTrainingData = true;
         this.filePath = filePath;
         this.wordCounter = new HashMap<>();
         this.fileTypeToRead = fileTypeToRead;
         this.classCount = 0;
         this.className = classNameToCountFor;
         this.countWords();
-        this.k = k;
-        this.isTestData = true;
-
-        // automatically track wordcounter instances for probability calculation and so on.
+        WordCounter.addToUniqueWordList(this.wordCounter);
+        this.makeWordMatricesContainSameWords();
         if (trackClassWordCounters) {
             WordCounter.wordCounters.add(this);
-            WordCounter.generateClassificationProbabilites();
         }
     }
 
@@ -62,89 +58,70 @@ public class WordCounter {
     }
 
     public static List<WordCounter> getTrainingData() {
-        return WordCounter.wordCounters.stream().filter(wordCounter -> wordCounter.isTestData).toList();
+        return WordCounter.wordCounters.stream().filter(wordCounter -> wordCounter.isTrainingData).toList();
     }
 
     public static HashMap<String, HashMap<String, Integer>> getWordCountPerClass() {
         return WordCounter.wordCountPerClass;
     }
 
-    public static void generateClassificationProbabilites() {
+    public static HashMap<String, Integer> getClassificationAppearences() {
+        WordCounter.generateClassifcationAppearences();
+        return WordCounter.classificationAppearences;
+    }
 
-        int totalCount = 0;
+    private static void generateClassifcationAppearences() {
         for (WordCounter wc: WordCounter.wordCounters) {
-            if (wc.className == null) {
-                continue;
-            }
-            totalCount = totalCount + wc.classCount;
-        }
 
-        for (WordCounter wc: WordCounter.wordCounters) {
-            if (wc.className == null) {
-                continue;
+            if (wc.isTrainingData()) {
+                WordCounter.classificationAppearences.put(wc.className, wc.classCount);
             }
-            WordCounter.classProbalities.put(wc.className, (double) wc.classCount / totalCount);
         }
     }
 
-    public static HashMap<String, Double> getClassisficationProbabilities() {
-        return WordCounter.classProbalities;
+
+    public static int getUniqueWords() {
+        return uniqueWordsInAllDocuments.size();
     }
 
-    public String getClassificationName() {
-        return this.className;
-    }
-
-    public boolean isTestData() {
-        return this.isTestData;
+    public boolean isTrainingData() {
+        return this.isTrainingData;
     }
 
     public HashMap<String, Integer> getWordCount() {
         return new HashMap<>(this.wordCounter);
     }
 
-    public HashMap<String, Double> getWordProbabilitiesForWordsIn(HashMap<String, Integer> wordCounter) {
-        HashMap<String, Double> wordProbabilities = new HashMap<>();
-        int totalWordCount =  wordCounter.values().stream().mapToInt(Integer::intValue).sum();
-        for (String word: wordCounter.keySet()) {
-
-            // assumption: even if word does not really occur, we assume it occurs at least once in average
-            // test. thus, minimum word count is at least 1 (Laplace-Smoothing)
-            int curVal = wordCounter.get(word);
-
-
-            int d = totalWordCount + WordCounter.uniqueWordsInAllDocuments.size();
-            double prob = (double) (curVal + this.k) / (d);
-            wordProbabilities.put(word, prob);
-        }
-        return wordProbabilities;
-    }
-
-    public HashMap<String, Double> getWordProbabilities() {
-        return this.getWordProbabilitiesForWordsIn(this.getWordCount());
-    }
-
-    public HashMap<String, Double> generateClassProbabilitiesWith(WordCounter otherClassWordCounter) {
-        HashMap<String, Double> res = new HashMap<>();
-        int totalCount = this.classCount + otherClassWordCounter.classCount;
-        res.put(this.className, (double) this.classCount/totalCount);
-        res.put(otherClassWordCounter.className, (double) otherClassWordCounter.classCount / totalCount);
-        return res;
-    }
-
     private static void addToUniqueWordList(HashMap<String, Integer> wordCounter) {
         WordCounter.uniqueWordsInAllDocuments.addAll(wordCounter.keySet());
+    }
+
+    private void makeWordMatricesContainSameWords() {
+
+        for(String word: WordCounter.uniqueWordsInAllDocuments) {
+            for (WordCounter wc: WordCounter.wordCounters) {
+                if (!wc.isTrainingData()) {
+                    continue;
+                }
+                else if (!wc.wordCounter.containsKey(word)) {
+                    wc.wordCounter.put(word, 0);
+                }
+            }
+        }
     }
 
     private void countWords() {
         switch (this.fileTypeToRead) {
             case ".txt" : {
                 this.countWordsInTxt(this.filePath);
+                break;
             }
             case ".csv": {
-                System.out.println("csv");
+                System .out.println("csv");
+                break;
             }
         }
+
     }
 
     private void countWordsInTxt(String filePath){
@@ -171,7 +148,7 @@ public class WordCounter {
             }
         }
 
-        if (!WordCounter.wordCountPerClass.containsKey(this.className) && this.className != null) {
+        if (!WordCounter.wordCountPerClass.containsKey(this.className) && this.isTrainingData()) {
             WordCounter.wordCountPerClass.put(this.className, this.wordCounter);
         }
     }
