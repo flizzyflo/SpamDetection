@@ -9,70 +9,29 @@ public class NaiveBayes {
 
     private final List<String> classificationNames;
     private final HashMap<String, HashMap<String, Double>> wordProbabilitiesPerClassification;
-    private HashMap<String, Double> classificationProbabilites = new HashMap<>();
+    private final HashMap<String, Double> classificationProbabilities = new HashMap<>();
     private final HashMap<String, Double> estimatedClassificationResults;
-    private final HashMap<String, Integer> classificationAppearences;
+    private final HashMap<String, Integer> classificationAppearances;
     private final int k;
 
-    public NaiveBayes(int k, HashMap<String, Integer> classificationAppearences) {
-        this.classificationNames = new ArrayList<String>();
+    public NaiveBayes(int k, HashMap<String, Integer> classificationAppearances) {
+        this.classificationNames = new ArrayList<>(classificationAppearances.keySet());
         this.wordProbabilitiesPerClassification = new HashMap<>();
         this.k = k;
-        this.classificationAppearences = classificationAppearences;
-        this.estimatedClassificationResults = new HashMap<String, Double>();
+        this.classificationAppearances = classificationAppearances;
+        this.estimatedClassificationResults = new HashMap<>();
     }
 
     public void train(HashMap<String, HashMap<String, Integer>> wordsPerClassCount) {
-
-        this.generateProbabilitesPerClassification(wordsPerClassCount);
+        this.generateProbabilitesPerClassification();
         this.generateWordProbabilityPerClass(wordsPerClassCount);
-
     }
 
     public String predict(WordCounter textToBeClassified) {
-        // if automatic wordCounter counting is enabled, classification probs are set automatically
 
         this._predict(textToBeClassified);
         return this.getPredictedClassification();
     }
-
-    private void generateProbabilitesPerClassification(HashMap<String, HashMap<String, Integer>> wordsPerClassificationCount) {
-
-        int totalCount = this.classificationAppearences.values().stream().mapToInt(Integer::intValue).sum();
-        int singleCount;
-        double probabilityOfClassificaiton;
-
-
-        for (String k: this.classificationAppearences.keySet()) {
-            singleCount = this.classificationAppearences.get(k);
-            probabilityOfClassificaiton = (double) singleCount / totalCount;
-            this.classificationProbabilites.put(k, probabilityOfClassificaiton);
-        }
-    }
-
-    private void generateWordProbabilityPerClass(HashMap<String, HashMap<String, Integer>> wordsPerClassificationCount) {
-
-        int totalWordCountPerClassification;
-        int uniqueWords = WordCounter.getUniqueWords();
-
-        HashMap<String, Double> wordProbabilities = new HashMap<>();
-        HashMap<String, Integer> wordCount;
-
-        for (String classficitation: wordsPerClassificationCount.keySet()) {
-            wordCount = wordsPerClassificationCount.get(classficitation);
-            totalWordCountPerClassification = wordCount.values().stream().mapToInt(Integer::intValue).sum();
-            int div = totalWordCountPerClassification + uniqueWords;
-
-            for (String word: wordCount.keySet()) {
-                int wordAppearance = wordCount.get(word);
-                double wordProb = (double) (wordAppearance + this.k) / totalWordCountPerClassification;
-                wordProbabilities.put(word, wordProb);
-            }
-            this.wordProbabilitiesPerClassification.put(classficitation, wordProbabilities);
-            wordProbabilities = new HashMap<>();
-        }
-    }
-
 
     private void _predict(WordCounter textToBeClassified) {
         double classificationProbability;
@@ -100,7 +59,43 @@ public class NaiveBayes {
         return classification;
     }
 
+    private void generateProbabilitesPerClassification() {
 
+        int totalCount = this.classificationAppearances.values().stream().mapToInt(Integer::intValue).sum();
+        int singleCount;
+        double probabilityOfClassificaiton;
+
+        for (String k: this.classificationAppearances.keySet()) {
+            singleCount = this.classificationAppearances.get(k);
+            probabilityOfClassificaiton = (double) singleCount / totalCount;
+            this.classificationProbabilities.put(k, probabilityOfClassificaiton);
+        }
+    }
+
+    private void generateWordProbabilityPerClass(HashMap<String, HashMap<String, Integer>> wordCountPerClassification) {
+
+        int totalWordCountPerClassification;
+        int uniqueWords = WordCounter.getUniqueWordCount();
+
+        HashMap<String, Double> wordProbabilities = new HashMap<>();
+        HashMap<String, Integer> words;
+
+        for (String classficitation: wordCountPerClassification.keySet()) {
+            words = wordCountPerClassification.get(classficitation);
+            totalWordCountPerClassification = words.values().stream().mapToInt(Integer::intValue).sum();
+
+            int div = totalWordCountPerClassification + uniqueWords;
+
+            for (String word: words.keySet()) {
+                int wordAppearance = words.get(word);
+                double wordProb = (double) (wordAppearance + this.k) / div;
+                wordProbabilities.put(word, wordProb);
+            }
+            this.wordProbabilitiesPerClassification.put(classficitation, wordProbabilities);
+
+            wordProbabilities = new HashMap<>();
+        }
+    }
 
     private double makePredictionsPerClassification(HashMap<String, HashMap<String, Double>> wordProbabilityPerClass, String className, HashMap<String, Integer> textToBeClassified) {
 
@@ -108,7 +103,7 @@ public class NaiveBayes {
         double wordProbability;
 
         // share of class on total training data amount
-        double probability = this.classificationProbabilites.get(className);
+        double probability = this.classificationProbabilities.get(className);
         // pretrained probabilites per class per word
         HashMap<String, Double> wordProbabilities = wordProbabilityPerClass.get(className);
 
