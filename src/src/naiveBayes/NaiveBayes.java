@@ -15,9 +15,9 @@ public class NaiveBayes {
     private final int k;
 
     public NaiveBayes(int k, HashMap<String, Integer> classificationAppearances) {
+        this.k = k;
         this.classificationNames = new ArrayList<>(classificationAppearances.keySet());
         this.wordProbabilitiesPerClassification = new HashMap<>();
-        this.k = k;
         this.classificationAppearances = classificationAppearances;
         this.estimatedClassificationResults = new HashMap<>();
     }
@@ -28,7 +28,6 @@ public class NaiveBayes {
     }
 
     public String predict(WordCounter textToBeClassified) {
-
         this._predict(textToBeClassified);
         return this.getPredictedClassification();
     }
@@ -44,9 +43,9 @@ public class NaiveBayes {
     }
 
     private String getPredictedClassification() {
-        String classification = null;
         double highestProbability = -1;
         double estimatedProbability;
+        String classification = null;
 
         for (String classificationName: this.classificationNames) {
             estimatedProbability = this.estimatedClassificationResults.get(classificationName);
@@ -60,7 +59,6 @@ public class NaiveBayes {
     }
 
     private void generateProbabilitesPerClassification() {
-
         int totalCount = this.classificationAppearances.values().stream().mapToInt(Integer::intValue).sum();
         int singleCount;
         double probabilityOfClassificaiton;
@@ -73,25 +71,23 @@ public class NaiveBayes {
     }
 
     private void generateWordProbabilityPerClass(HashMap<String, HashMap<String, Integer>> wordCountPerClassification) {
-
         int totalWordCountPerClassification;
         int uniqueWords = WordCounter.getUniqueWordCount();
-
         HashMap<String, Double> wordProbabilities = new HashMap<>();
         HashMap<String, Integer> words;
 
-        for (String classficitation: wordCountPerClassification.keySet()) {
-            words = wordCountPerClassification.get(classficitation);
+        for (String classification: wordCountPerClassification.keySet()) {
+            words = wordCountPerClassification.get(classification);
             totalWordCountPerClassification = words.values().stream().mapToInt(Integer::intValue).sum();
 
-            int div = totalWordCountPerClassification + uniqueWords;
+            int divisor = totalWordCountPerClassification + uniqueWords;
 
             for (String word: words.keySet()) {
                 int wordAppearance = words.get(word);
-                double wordProb = (double) (wordAppearance + this.k) / div;
+                double wordProb = (double) (wordAppearance + this.k) / divisor;
                 wordProbabilities.put(word, wordProb);
             }
-            this.wordProbabilitiesPerClassification.put(classficitation, wordProbabilities);
+            this.wordProbabilitiesPerClassification.put(classification, wordProbabilities);
 
             wordProbabilities = new HashMap<>();
         }
@@ -113,8 +109,6 @@ public class NaiveBayes {
             wordProbability = wordProbabilities.getOrDefault(word, 1.0); // Probability of the word in the class
             probability = probability * Math.pow(wordProbability, wordCount); // Multiply the probability for each word to get total prob
         }
-
         return probability;
     }
-
 }
