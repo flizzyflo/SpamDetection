@@ -4,56 +4,56 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class WordCounter {
 
-
-    final private static HashMap<String, Double> classProbalities = new HashMap<>();
+    final private static Set<String> uniqueWordsInAllDocuments = new HashSet<>();
     final private static List<WordCounter> wordCounters= new ArrayList<>();
-    private static Set<String> uniqueWordsInAllDocuments = new HashSet<>();
+    final private static HashMap<String, Double> classProbalities = new HashMap<>();
+    final private static HashMap<String, HashMap<String, Integer>> wordCountPerClass = new HashMap<>();
+
     final private String filePath;
     final private HashMap<String, Integer> wordCounter;
     final private String fileTypeToRead;
     private int classCount;
     private String className;
     private boolean isTestData;
+    private int k;
 
-    public WordCounter(String filePath, String fileTypeToRead, Boolean trackClassWordCounters) {
+    public WordCounter(String filePath, String fileTypeToRead, int k, Boolean trackClassWordCounters) {
         this.filePath = filePath;
         this.wordCounter = new HashMap<>();
         this.fileTypeToRead = fileTypeToRead;
-        this.countWords(this.filePath);
+        this.countWords();
+        this.k = k;
         WordCounter.addToUniqueWordList(this.wordCounter);
         this.isTestData = false;
 
         // automatically track wordcounter instances for probability calculation and so on.
         if (trackClassWordCounters) {
             WordCounter.wordCounters.add(this);
-          //  WordCounter.mergeWordSets();
-            WordCounter.generateOverallClassProbabilities();
+            WordCounter.generateClassificationProbabilites();
         }
     }
 
-    public WordCounter(String filePath, String fileTypeToRead, String classNameToCountFor, Boolean trackClassWordCounters) {
+    public WordCounter(String filePath, String fileTypeToRead, String classNameToCountFor, int k, Boolean trackClassWordCounters) {
         this.filePath = filePath;
         this.wordCounter = new HashMap<>();
         this.fileTypeToRead = fileTypeToRead;
         this.classCount = 0;
         this.className = classNameToCountFor;
-        this.countWords(this.filePath);
-        WordCounter.addToUniqueWordList(this.wordCounter);
+        this.countWords();
+        this.k = k;
         this.isTestData = true;
 
         // automatically track wordcounter instances for probability calculation and so on.
         if (trackClassWordCounters) {
             WordCounter.wordCounters.add(this);
-            WordCounter.generateOverallClassProbabilities();
+            WordCounter.generateClassificationProbabilites();
         }
     }
 
     public static List<WordCounter> getWordCounters() {
-
         return WordCounter.wordCounters;
     }
 
@@ -61,8 +61,15 @@ public class WordCounter {
         WordCounter.wordCounters.clear();
     }
 
+    public static List<WordCounter> getTrainingData() {
+        return WordCounter.wordCounters.stream().filter(wordCounter -> wordCounter.isTestData).toList();
+    }
 
-    public static void generateOverallClassProbabilities() {
+    public static HashMap<String, HashMap<String, Integer>> getWordCountPerClass() {
+        return WordCounter.wordCountPerClass;
+    }
+
+    public static void generateClassificationProbabilites() {
 
         int totalCount = 0;
         for (WordCounter wc: WordCounter.wordCounters) {
@@ -80,11 +87,11 @@ public class WordCounter {
         }
     }
 
-    public static HashMap<String, Double> getClassProbabilities() {
+    public static HashMap<String, Double> getClassisficationProbabilities() {
         return WordCounter.classProbalities;
     }
 
-    public String getClassName() {
+    public String getClassificationName() {
         return this.className;
     }
 
@@ -104,13 +111,10 @@ public class WordCounter {
             // assumption: even if word does not really occur, we assume it occurs at least once in average
             // test. thus, minimum word count is at least 1 (Laplace-Smoothing)
             int curVal = wordCounter.get(word);
-            //curVal = curVal + 1;
 
-            if (curVal == 0) {
-                continue;
-            }
+
             int d = totalWordCount + WordCounter.uniqueWordsInAllDocuments.size();
-            double prob = (double) (curVal + 1) / (d);
+            double prob = (double) (curVal + this.k) / (d);
             wordProbabilities.put(word, prob);
         }
         return wordProbabilities;
@@ -132,7 +136,19 @@ public class WordCounter {
         WordCounter.uniqueWordsInAllDocuments.addAll(wordCounter.keySet());
     }
 
-    private void countWords(String filePath){
+    private void countWords() {
+        switch (this.fileTypeToRead) {
+            case ".txt" : {
+                this.countWordsInTxt(this.filePath);
+            }
+            case ".csv": {
+                System.out.println("csv");
+            }
+        }
+    }
+
+    private void countWordsInTxt(String filePath){
+
         File directory = new File(filePath);
         File[] files = directory.listFiles();
 
@@ -143,7 +159,7 @@ public class WordCounter {
         // get the files from there
         for (File currentFile: files) {
             if (currentFile.isDirectory()) {
-                this.countWords(currentFile.toString());
+                this.countWordsInTxt(currentFile.toString());
             }
             else if (currentFile.getName().endsWith(this.fileTypeToRead)) {
                 // class name is given as argument in constructor, thus count class
@@ -153,6 +169,10 @@ public class WordCounter {
                 }
                 this.readFileContentOf(currentFile);
             }
+        }
+
+        if (!WordCounter.wordCountPerClass.containsKey(this.className) && this.className != null) {
+            WordCounter.wordCountPerClass.put(this.className, this.wordCounter);
         }
     }
 
