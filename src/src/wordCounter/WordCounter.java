@@ -9,15 +9,14 @@ public class WordCounter {
 
     final private static Set<String> uniqueWordsInAllDocuments = new HashSet<>();
     final private static List<WordCounter> wordCounters= new ArrayList<>();
-    final private static HashMap<String, Double> classProbalities = new HashMap<>();
     final private static HashMap<String, HashMap<String, Integer>> wordCountPerClass = new HashMap<>();
-    final private static HashMap<String, Integer> classificationAppearences = new HashMap<>();
+    final private static HashMap<String, Integer> classificationAppearances = new HashMap<>();
     final private String filePath;
     final private HashMap<String, Integer> wordCounter;
     final private String fileTypeToRead;
+    final private boolean isTrainingData;
     private int classCount;
     private String className;
-    private boolean isTrainingData;
 
     public WordCounter(String filePath, String fileTypeToRead, Boolean trackClassWordCounters) {
         if (trackClassWordCounters) {
@@ -55,27 +54,15 @@ public class WordCounter {
         WordCounter.wordCounters.clear();
     }
 
-    public static List<WordCounter> getTrainingData() {
-        return WordCounter.wordCounters.stream().filter(wordCounter -> wordCounter.isTrainingData).toList();
-    }
-
     public static HashMap<String, HashMap<String, Integer>> getWordCountPerClass() {
         return WordCounter.wordCountPerClass;
     }
 
-    public static HashMap<String, Integer> getClassificationAppearences() {
-        WordCounter.generateClassifcationAppearences();
-        return WordCounter.classificationAppearences;
+    public static HashMap<String, Integer> getClassificationAppearances() {
+        WordCounter.generateClassificationAppearances();
+        return WordCounter.classificationAppearances;
     }
 
-    private static void generateClassifcationAppearences() {
-        for (WordCounter wc: WordCounter.wordCounters) {
-
-            if (wc.isTrainingData()) {
-                WordCounter.classificationAppearences.put(wc.className, wc.classCount);
-            }
-        }
-    }
 
     public static int getUniqueWordCount() {
         return uniqueWordsInAllDocuments.size();
@@ -87,6 +74,15 @@ public class WordCounter {
 
     public HashMap<String, Integer> getWordCount() {
         return new HashMap<>(this.wordCounter);
+    }
+
+    private static void generateClassificationAppearances() {
+        for (WordCounter wc: WordCounter.wordCounters) {
+
+            if (wc.isTrainingData()) {
+                WordCounter.classificationAppearances.put(wc.className, wc.classCount);
+            }
+        }
     }
 
     private static void addToUniqueWordList(HashMap<String, Integer> wordCounter) {
@@ -125,9 +121,6 @@ public class WordCounter {
 
         File directory = new File(filePath);
         File[] files = directory.listFiles();
-
-        // ensure files is not null
-        assert files != null;
 
         // call the files, if directory recursive step into directory and
         // get the files from there
@@ -200,7 +193,11 @@ public class WordCounter {
 
     private void addWordToWordCounter(String word) {
 
-        if (StopWords.isStopword(word)| word.matches("[0-9]*")) {
+        if (StopWords.isStopword(word)) {
+            return;
+        }
+
+        if (word.matches("[0-9]*")) {
             return;
         }
 
