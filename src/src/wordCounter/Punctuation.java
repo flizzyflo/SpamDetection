@@ -7,6 +7,6 @@ public class Punctuation {
 
     public static List<String> PUNCTUATION = Arrays.asList(new String[]{
             "!", "#", "$", "%", "&", "\"", "(", ")", "*", "+", ",", "-", ".", "/", ":", ";", "<", "=", ">", "?", "@",
-            "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~", String.valueOf('"')});
+            "[", "\\", "]", "^", "_", "`", "{", "|", "}", "~", String.valueOf('"'), String.valueOf("'")});
 
 }
