@@ -1,5 +1,7 @@
 package wordCounter;
 
+import stringProcessor.*;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -114,7 +116,6 @@ public class WordCounter {
                 break;
             }
         }
-
     }
 
     private void countWordsInTxt(String filePath){
@@ -159,16 +160,28 @@ public class WordCounter {
         catch (Exception e) {
             System.out.println("Error: " + e);
         }
+
     }
 
     private void processString(String fileLine) {
         // filtering and cleaning process of words
-        fileLine = this.removeInterpunctuation(fileLine);
-        String[] words = fileLine.split(" ");
 
-        this.turnLowerCase(words);
+        String[] words = fileLine.split("\s");
+        StringCleaner stringCleaner = new StringCleaner();
 
         for (String word: words) {
+
+            word = stringCleaner.apply(new TrimWord(), word);
+            word = stringCleaner.apply(new RemovePunctuation(), word);
+            word = stringCleaner.apply(new TrimWord(), word);
+            word = stringCleaner.apply(new MakeLowerCase(), word);
+            word = stringCleaner.apply(new TrimWord(), word);
+            word = stringCleaner.apply(new RemoveNumbers(), word);
+            word = stringCleaner.apply(new TrimWord(), word);
+            word = stringCleaner.apply(new RemoveStopWord(), word);
+            word = stringCleaner.apply(new TrimWord(), word);
+            word = stringCleaner.apply(new WordStemmer(), word);
+
             // if valid word, add to counter
             if (!(word.equals(" ") | word.isEmpty())) {
                 this.addWordToWordCounter(word);
@@ -176,30 +189,7 @@ public class WordCounter {
         }
     }
 
-    private String removeInterpunctuation(String line) {
-        for (String interPunctuation: Punctuation.PUNCTUATION) {
-            line = line.replace(interPunctuation, " ");
-        }
-        return line;
-    }
-
-    private void turnLowerCase(String[] words) {
-        String currentWord;
-        for (int i = 0; i < words.length; i++){
-            currentWord = words[i].toLowerCase();
-            words[i] = currentWord;
-        }
-    }
-
     private void addWordToWordCounter(String word) {
-
-        if (StopWords.isStopword(word)) {
-            return;
-        }
-
-        if (word.matches("[0-9]*")) {
-            return;
-        }
 
         if (word.length() <= 1) {
             return;
