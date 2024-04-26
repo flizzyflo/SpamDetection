@@ -6,10 +6,14 @@ public class RemovePunctuation implements StringProcessor{
 
     @Override
     public String doProcessing(String s) {
+        StringBuilder processed = new StringBuilder();
 
-        for (String interPunctuation: Punctuation.PUNCTUATION) {
-            s = s.replace(interPunctuation, "");
+        for (Character c: s.toCharArray()) {
+            if (Character.isLetterOrDigit(c)) {
+                processed.append(c);
+            }
         }
-        return s;
+        return processed.toString();
+
     }
 }
