@@ -4,11 +4,14 @@ public class RemoveNumbers implements StringProcessor{
 
     @Override
     public String doProcessing(String s) {
-
-        for (int number = 0; number < 10; number ++) {
-            s = s.replace(String.valueOf(number), "");
+        StringBuilder processed = new StringBuilder();
+        
+        for (Character c: s.toCharArray()) {
+            if (Character.isLetter(c)){
+                processed.append(c);
+            }
         }
-
-        return s;
+        return processed.toString();
+  
     }
 }
