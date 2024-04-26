@@ -173,14 +173,10 @@ public class WordCounter {
 
             word = stringCleaner.apply(new TrimWord(), word);
             word = stringCleaner.apply(new RemovePunctuation(), word);
-            word = stringCleaner.apply(new TrimWord(), word);
-            word = stringCleaner.apply(new MakeLowerCase(), word);
-            word = stringCleaner.apply(new TrimWord(), word);
             word = stringCleaner.apply(new RemoveNumbers(), word);
-            word = stringCleaner.apply(new TrimWord(), word);
             word = stringCleaner.apply(new RemoveStopWord(), word);
-            word = stringCleaner.apply(new TrimWord(), word);
-            word = stringCleaner.apply(new WordStemmer(), word);
+            word = stringCleaner.apply(new MakeLowerCase(), word);
+          //  word = stringCleaner.apply(new WordStemmer(), word);
 
             // if valid word, add to counter
             if (!(word.equals(" ") | word.isEmpty())) {
