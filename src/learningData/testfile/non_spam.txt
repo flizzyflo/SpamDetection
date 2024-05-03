@@ -1,8 +1,0 @@
-Hallo,
-
-Dies ist eine Test-E-Mail, um die Funktionalität unseres E-Mail-Systems zu überprüfen. Bitte ignorieren Sie diese E-Mail und löschen Sie sie, wenn Sie sie erhalten haben.
-
-Vielen Dank und beste Grüße,
-[Dein Name]
-
-Gewinnspielteam

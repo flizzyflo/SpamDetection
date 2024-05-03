@@ -125,7 +125,12 @@ public class WordCounter {
 
         // call the files, if directory recursive step into directory and
         // get the files from there
+
+        assert files != null;
+
+        assert files != null;
         for (File currentFile: files) {
+
             if (currentFile.isDirectory()) {
                 this.countWordsInTxt(currentFile.toString());
             }

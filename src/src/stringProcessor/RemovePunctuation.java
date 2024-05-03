@@ -1,7 +1,5 @@
 package stringProcessor;
 
-import wordCounter.Punctuation;
-
 public class RemovePunctuation implements StringProcessor{
 
     @Override

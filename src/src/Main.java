@@ -6,8 +6,8 @@ import java.util.HashMap;
 public class Main {
     public static void main(String[] args) {
 
-        WordCounter spam = new WordCounter("/Users/florianluebke/Desktop/SpamDetection/SpamDetection/src/learningData/spam", ".txt", "spam", true);
-        WordCounter notSpam = new WordCounter("/Users/florianluebke/Desktop/SpamDetection/SpamDetection/src/learningData/notSpam", ".txt", "not spam", true);
+        new WordCounter("/Users/florianluebke/Desktop/SpamDetection/SpamDetection/src/learningData/spam", ".txt", "spam", true);
+        new WordCounter("/Users/florianluebke/Desktop/SpamDetection/SpamDetection/src/learningData/notSpam", ".txt", "not spam", true);
 
         WordCounter testCounter = new WordCounter("/Users/florianluebke/Desktop/SpamDetection/SpamDetection/src/learningData/testfile", ".txt", true);
 
